@@ -1,11 +1,10 @@
 Package: KNNMODEL
 Type: Package
-Title: What the Package Does (Title Case)
+Title: KNN MODEL TO DIABETES DATASET
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Santiago Moreno Suárez
+Maintainer: santiagoo.morenos@ecci.edu.co
+Description:This essential code conducts predictive analysis on health and diabetes indicators. It explores data, converts "Diabetes_012" into binary form for machine learning, applies k-Nearest Neighbors (KNN) algorithm, and rigorously evaluates using cross-validation. 
+License: MIT
 Encoding: UTF-8
 LazyData: true
