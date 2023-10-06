@@ -1,0 +1,217 @@
+---
+title: "KNN MODEL"
+author: "Santiago Orlando Moreno Suárez"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Practice on Predictive Analytics of Health Indicators and Diabetes
+
+## Introduction
+
+In this practice, a predictive analysis on health indicators and diabetes is performed using the k-Nearest Neighbors (KNN) algorithm. The objective is to understand the relationship between various health indicators and the presence of diabetes. A detailed data exploration is carried out, the data is prepared for machine learning and a KNN model is trained to make predictions. The code is explained part by part below.
+
+## Part 1: Exploration and Data Manipulation
+
+```{r}
+library(tidyverse)
+library(caret)
+library(MASS)
+library(glmnet)
+library(boot)
+```
+
+-   **`install.packages(c("caret", "MASS", "glmnet", "boot"))`** installs the specified R packages if they are not already installed. These packages are essential for various data analysis tasks.
+
+-   **`library(tidyverse)`** loads the **`tidyverse`** package, which is a collection of R packages designed for data manipulation and visualization. It includes packages like **`ggplot2`** and **`dplyr`**.
+
+-   **`library(caret)`**, **`library(MASS)`**, **`library(glmnet)`**, and **`library(boot)`** load the respective packages into the R environment. These packages are used for machine learning, statistical modeling, and bootstrapping techniques.
+
+### **Reading the Dataset:**
+
+```{r}
+data <- read.csv("diabetes_012_health_indicators_BRFSS2015.csv")
+```
+
+**`read.csv("diabetes_012_health_indicators_BRFSS2015.csv")`** reads the CSV (Comma-Separated Values) file named "diabetes_012_health_indicators_BRFSS2015.csv" into an R dataframe named **`data`**. This dataset likely contains health-related indicators, possibly including information related to diabetes, which will be used for further analysis in the subsequent parts of the code
+
+## **Part 2: Data Sampling and Preparation**
+
+### **1. Setting Seed and Sampling Data:**
+
+```{r}
+set.seed(123)
+sampled_data <- data %>% sample_frac(0.01)
+```
+
+-   **`set.seed(123)`**: Sets the random seed to 123. This ensures that if you run the code again, you will get the same random results. It's useful for reproducibility in data analysis.
+
+-   **`data %>% sample_frac(0.01)`**: Takes a random 1% sample of the original dataset (**`data`**). The **`%>%`** operator, also known as the pipe operator, is used here to pipe the output of the previous command (**`data`**) into the **`sample_frac`** function, which then samples 1% of the data.
+
+### **2. Creating Binary Diabetes Labels:**
+
+```{r}
+sampled_data$DiabetesBinary <- make.names(factor(ifelse(sampled_data$Diabetes_012 > 0, 1, 0)))
+sampled_data$DiabetesBinary <- factor(sampled_data$DiabetesBinary, levels = c("X0", "X1"))
+```
+
+-   **`make.names(factor(ifelse(sampled_data$Diabetes_012 > 0, 1, 0)))`**: Converts the numeric variable **`Diabetes_012`** into a binary factor variable. If **`Diabetes_012`** is greater than 0, it's set to 1, otherwise 0. **`factor`** converts these numeric values into factors.
+
+-   **`sampled_data$DiabetesBinary <- factor(...)`**: Assigns the resulting factors to a new column called **`DiabetesBinary`** in the **`sampled_data`** dataframe.
+
+-   **`factor(..., levels = c("X0", "X1"))`**: Specifies the levels of the factor. Here, "X0" represents the absence of diabetes (when **`Diabetes_012`** is 0) and "X1" represents the presence of diabetes (when **`Diabetes_012`** is greater than 0).
+
+### **3. Creating Subsets:**
+
+```{r}
+sampled_data_bmi <- sampled_data
+sampled_data_menthlth <- sampled_data
+sampled_data_physhtlth <- sampled_data
+```
+
+These lines create three new dataframes (**`sampled_data_bmi`**, **`sampled_data_menthlth`**, and **`sampled_data_physhtlth`**), each containing the same data as **`sampled_data`**. These subsets are likely created to perform specific analyses or modeling tasks on different health indicators while keeping the original sampled data intact for reference.
+
+## **Part 3: K-Nearest Neighbors (KNN) Classification**
+
+### **1. Setting Seed and Creating Training and Test Sets:**
+
+```{r}
+set.seed(123)
+train_index <- createDataPartition(sampled_data$DiabetesBinary, p = 0.8, list = FALSE, times = 1)
+train_data <- sampled_data[train_index, ]
+test_data <- sampled_data[-train_index, ]
+```
+
+-   **`set.seed(123)`**: Sets the random seed to 123 for reproducibility.
+
+-   **`createDataPartition(sampled_data$DiabetesBinary, p = 0.8, list = FALSE, times = 1)`**: Splits the **`sampled_data`** into training and test sets. 80% of the data is used for training (**`train_data`**), and 20% is used for testing (**`test_data`**). The indices for the training set are stored in **`train_index`**.
+
+### **2. Setting up Control Parameters for KNN Model:**
+
+```{r}
+sampled_data_bmi <- sampled_data
+sampled_data_menthlth <- sampled_data
+sampled_data_physhtlth <- sampled_data
+ctrl <- trainControl(method = "cv", number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+```
+
+**`trainControl(...)`**: Configures the control parameters for the model training process. In this case, 10-fold cross-validation (**`method = "cv"`**) is used with class probabilities enabled (**`classProbs = TRUE`**). The **`twoClassSummary`** function is specified for summarizing the results for binary classification.
+
+### **3. Training and Evaluating K-Nearest Neighbors (KNN) Model:**
+
+```{r}
+set.seed(20)
+knn_model <- train(DiabetesBinary ~ ., data = train_data, method = "knn", trControl = ctrl, tuneLength = 10)
+predictions_knn <- predict(knn_model, newdata = test_data)
+confusionMatrix(predictions_knn, test_data$DiabetesBinary)
+```
+
+-   **`set.seed(20)`**: Sets a different random seed (20) for the KNN model training process.
+
+-   **`train(...)`**: Trains the KNN model. **`DiabetesBinary ~ .`** indicates that the column **`DiabetesBinary`** is the target variable, and all other columns are used as features. The training data is **`train_data`**, and the control parameters are specified by **`trControl`**.
+
+-   **`predict(...)`**: Uses the trained **`knn_model`** to make predictions on the test data (**`test_data`**).
+
+-   **`confusionMatrix(...)`**: Computes the confusion matrix to evaluate the performance of the KNN model by comparing the predicted values (**`predictions_knn`**) with the actual values (**`test_data$DiabetesBinary`**).
+
+```{r}
+print(knn_model)
+knn_model
+```
+
+**`print(knn_model)`**: This line of code prints the details of the **`knn_model`**, which was trained using the **`train`** function. When you print a trained model in R, it shows various information about the model, including its parameters, training performance, and tuning results (if applicable). This information is crucial for understanding the characteristics of the trained model.
+
+## **Part 4: Linear and Multilinear Regression**
+
+### **1. Linear Regression Model for BMI:**
+
+```{r}
+model_bmi <- lm(BMI ~ ., data = sampled_data_bmi)
+```
+
+-   **`lm(BMI ~ ., data = sampled_data_bmi)`**: Fits a linear regression model where **`BMI`** is the dependent variable, and **`.`** represents that all other columns in the **`sampled_data_bmi`** dataframe are used as independent variables. This means the model is trying to predict **`BMI`** based on other available variables in the dataset.
+
+### **2. Cross-Validation for the BMI Regression Model:**
+
+```{r}
+cv_results_bmi <- cv.glm(data = sampled_data_bmi, glmfit = model_bmi, K = 10)
+```
+
+**`cv.glm(data = sampled_data_bmi, glmfit = model_bmi, K = 10)`**: Performs 10-fold cross-validation (**`K = 10`**) using the linear regression model (**`glmfit = model_bmi`**) on the data in **`sampled_data_bmi`**. Cross-validation is a technique used to assess how well a statistical model generalizes to an independent dataset. It involves dividing the dataset into K subsets, training the model on K-1 of the folds, and testing it on the remaining fold. This process is repeated K times, with each of the folds used exactly once as the validation data.
+
+### **3. Printing Cross-Validation Results:**
+
+```{r}
+print(cv_results_bmi)
+cv_results_bmi
+```
+
+**`print(cv_results_bmi)`**: Prints the results of cross-validation. This likely includes metrics such as mean squared error, mean absolute error, or other relevant statistics that indicate how well the regression model performs on the validation sets during the cross-validation process. Printing these results helps in understanding the performance of the model and comparing it against other models or variations of the same model.
+
+### **1. Linear Regression Model for Mental Health (`MentHlth`):**
+
+```{r}
+model_menthlth <- lm(MentHlth ~ ., data = sampled_data_menthlth)
+```
+
+**`lm(MentHlth ~ ., data = sampled_data_menthlth)`**: This line of code creates a linear regression model where **`MentHlth`** is the dependent variable, and **`.`** indicates that all other columns in the **`sampled_data_menthlth`** dataframe are used as independent variables. The model aims to predict **`MentHlth`** based on other available variables in the dataset.
+
+### **2. Cross-Validation for the Mental Health Regression Model:**
+
+```{r}
+cv_results_menthlth <- cv.glm(data = sampled_data_menthlth, glmfit = model_menthlth, K = 10)
+```
+
+**`cv.glm(data = sampled_data_menthlth, glmfit = model_menthlth, K = 10)`**: This line performs 10-fold cross-validation (**`K = 10`**) using the linear regression model (**`glmfit = model_menthlth`**) on the data in the **`sampled_data_menthlth`** dataframe. Cross-validation is a technique used to assess how well a statistical model generalizes to an independent dataset. It involves splitting the dataset into K subsets, training the model on K-1 of the folds, and testing it on the remaining fold. This process is repeated K times, with each fold used exactly once as the validation data.
+
+### **3. Printing Cross-Validation Results:**
+
+```{r}
+print(cv_results_menthlth)
+cv_results_menthlth
+```
+
+**`print(cv_results_menthlth)`**: This line prints the results of the cross-validation. The output likely includes metrics such as mean squared error, mean absolute error, or other relevant statistics indicating how well the regression model performs on the validation sets during the cross-validation process. Printing these results helps in understanding the performance of the model and comparing it against other models or variations of the same model.
+
+### **1. Linear Regression Model for Physical Health (`PhysHlth`):**
+
+```{r}
+model_physhtlth <- lm(PhysHlth ~ ., data = sampled_data_physhtlth)
+```
+
+**`lm(PhysHlth ~ ., data = sampled_data_physhtlth)`**: This line creates a linear regression model where **`PhysHlth`** is the dependent variable, and **`.`** indicates that all other columns in the **`sampled_data_physhtlth`** dataframe are used as independent variables. The model attempts to predict **`PhysHlth`** based on other available variables in the dataset.
+
+### **2. Cross-Validation for the Physical Health Regression Model:**
+
+```{r}
+cv_results_physhtlth <- cv.glm(data = sampled_data_physhtlth, glmfit = model_physhtlth, K = 10)
+```
+
+**`cv.glm(data = sampled_data_physhtlth, glmfit = model_physhtlth, K = 10)`**: This line performs 10-fold cross-validation (**`K = 10`**) using the linear regression model (**`glmfit = model_physhtlth`**) on the data in the **`sampled_data_physhtlth`** dataframe. Cross-validation is a technique used to assess how well a statistical model generalizes to an independent dataset. It involves splitting the dataset into K subsets, training the model on K-1 of the folds, and testing it on the remaining fold. This process is repeated K times, with each fold used exactly once as the validation data.
+
+```{r}
+print(cv_results_physhtlth)
+cv_results_physhtlth
+```
+
+**`print(cv_results_physhtlth)`**: This line prints the results of the cross-validation. The output likely includes metrics such as mean squared error, mean absolute error, or other relevant statistics indicating how well the regression model performs on the validation sets during the cross-validation process. Printing these results helps in understanding the performance of the model and comparing it against other models or variations of the same model.
+
+## CONCLUSIONS:
+
+1.  **Data Preparation and Exploration:** The code starts by loading necessary libraries and reading the dataset. A 1% random sample of the data is taken for analysis. The dataset is then processed to create binary labels for diabetes (**`DiabetesBinary`**) and subsets of data are created for different health indicators (**`BMI`**, **`MentHlth`**, **`PhysHlth`**).
+
+2.  **Classification Using K-Nearest Neighbors (KNN):** A KNN classification model is trained to predict diabetes (**`DiabetesBinary`**). The dataset is split into training and test sets (80% - 20%). The KNN model is evaluated using 10-fold cross-validation. Various **`k`** values from 1 to 10 are tested, and the model's performance is assessed using confusion matrices.
+
+3.  **Regression Modeling for Health Indicators:** Separate linear regression models are built for predicting health indicators (**`BMI`**, **`MentHlth`**, **`PhysHlth`**). Cross-validation with 10 folds is performed for each regression model, and the mean squared error or other relevant metrics are used to evaluate model performance.
+
+4.  **Cross-Validation and Model Evaluation:** Cross-validation is extensively used to assess the models' performance, ensuring robustness and generalizability. The printed cross-validation results provide insights into the models' accuracy and help in choosing the best-performing models.
+
+5.  **Reproducibility and Seed Setting:** The code emphasizes reproducibility by setting random seeds (**`set.seed(...)`**) at critical points. Reproducibility is crucial in data analysis to ensure that results can be replicated, enhancing the credibility of the findings.
+
+6.  **Overall Analysis:** The code offers a comprehensive analysis of health indicators, employing both classification and regression techniques. By utilizing KNN for binary classification and linear regression for continuous prediction, the code provides a holistic understanding of the relationships between various health indicators and diabetes status.
