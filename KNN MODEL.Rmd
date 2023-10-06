@@ -200,7 +200,7 @@ print(cv_results_physhtlth)
 cv_results_physhtlth
 ```
 
-**`print(cv_results_physhtlth)`**: This line prints the results of the cross-validation. The output likely includes metrics such as mean squared error, mean absolute error, or other relevant statistics indicating how well the regression model performs on the validation sets during the cross-validation process. Printing these results helps in understanding the performance of the model and comparing it against other models or variations of the same model.
+This line prints the results of the cross-validation. The output likely includes metrics such as mean squared error, mean absolute error, or other relevant statistics indicating how well the regression model performs on the validation sets during the cross-validation process. Printing these results helps in understanding the performance of the model and comparing it against other models or variations of the same model.
 
 ## CONCLUSIONS:
 
