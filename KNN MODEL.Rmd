@@ -19,7 +19,7 @@ In this practice, a predictive analysis on health indicators and diabetes is per
 
 ## Part 1: Exploration and Data Manipulation
 
-```{r}
+```{r message=FALSE}
 library(tidyverse)
 library(caret)
 library(MASS)
@@ -35,7 +35,7 @@ library(boot)
 
 ### **Reading the Dataset:**
 
-```{r}
+```{r message=FALSE}
 data <- read.csv("diabetes_012_health_indicators_BRFSS2015.csv")
 ```
 
@@ -45,7 +45,7 @@ data <- read.csv("diabetes_012_health_indicators_BRFSS2015.csv")
 
 ### **1. Setting Seed and Sampling Data:**
 
-```{r}
+```{r message=FALSE}
 set.seed(123)
 sampled_data <- data %>% sample_frac(0.01)
 ```
@@ -56,7 +56,7 @@ sampled_data <- data %>% sample_frac(0.01)
 
 ### **2. Creating Binary Diabetes Labels:**
 
-```{r}
+```{r message=FALSE}
 sampled_data$DiabetesBinary <- make.names(factor(ifelse(sampled_data$Diabetes_012 > 0, 1, 0)))
 sampled_data$DiabetesBinary <- factor(sampled_data$DiabetesBinary, levels = c("X0", "X1"))
 ```
@@ -69,7 +69,7 @@ sampled_data$DiabetesBinary <- factor(sampled_data$DiabetesBinary, levels = c("X
 
 ### **3. Creating Subsets:**
 
-```{r}
+```{r message=FALSE}
 sampled_data_bmi <- sampled_data
 sampled_data_menthlth <- sampled_data
 sampled_data_physhtlth <- sampled_data
@@ -81,7 +81,7 @@ These lines create three new dataframes (**`sampled_data_bmi`**, **`sampled_data
 
 ### **1. Setting Seed and Creating Training and Test Sets:**
 
-```{r}
+```{r message=FALSE}
 set.seed(123)
 train_index <- createDataPartition(sampled_data$DiabetesBinary, p = 0.8, list = FALSE, times = 1)
 train_data <- sampled_data[train_index, ]
@@ -94,7 +94,7 @@ test_data <- sampled_data[-train_index, ]
 
 ### **2. Setting up Control Parameters for KNN Model:**
 
-```{r}
+```{r message=FALSE}
 sampled_data_bmi <- sampled_data
 sampled_data_menthlth <- sampled_data
 sampled_data_physhtlth <- sampled_data
@@ -105,7 +105,7 @@ ctrl <- trainControl(method = "cv", number = 10, classProbs = TRUE, summaryFunct
 
 ### **3. Training and Evaluating K-Nearest Neighbors (KNN) Model:**
 
-```{r}
+```{r message=FALSE}
 set.seed(20)
 knn_model <- train(DiabetesBinary ~ ., data = train_data, method = "knn", trControl = ctrl, tuneLength = 10)
 predictions_knn <- predict(knn_model, newdata = test_data)
@@ -120,7 +120,7 @@ confusionMatrix(predictions_knn, test_data$DiabetesBinary)
 
 -   **`confusionMatrix(...)`**: Computes the confusion matrix to evaluate the performance of the KNN model by comparing the predicted values (**`predictions_knn`**) with the actual values (**`test_data$DiabetesBinary`**).
 
-```{r}
+```{r  message=FALSE}
 print(knn_model)
 knn_model
 ```
@@ -131,7 +131,7 @@ knn_model
 
 ### **1. Linear Regression Model for BMI:**
 
-```{r}
+```{r message=FALSE}
 model_bmi <- lm(BMI ~ ., data = sampled_data_bmi)
 ```
 
@@ -139,7 +139,7 @@ model_bmi <- lm(BMI ~ ., data = sampled_data_bmi)
 
 ### **2. Cross-Validation for the BMI Regression Model:**
 
-```{r}
+```{r message=FALSE}
 cv_results_bmi <- cv.glm(data = sampled_data_bmi, glmfit = model_bmi, K = 10)
 ```
 
@@ -147,7 +147,7 @@ cv_results_bmi <- cv.glm(data = sampled_data_bmi, glmfit = model_bmi, K = 10)
 
 ### **3. Printing Cross-Validation Results:**
 
-```{r}
+```{r message=FALSE}
 print(cv_results_bmi)
 cv_results_bmi
 ```
@@ -156,7 +156,7 @@ cv_results_bmi
 
 ### **1. Linear Regression Model for Mental Health (`MentHlth`):**
 
-```{r}
+```{r message=FALSE}
 model_menthlth <- lm(MentHlth ~ ., data = sampled_data_menthlth)
 ```
 
@@ -164,7 +164,7 @@ model_menthlth <- lm(MentHlth ~ ., data = sampled_data_menthlth)
 
 ### **2. Cross-Validation for the Mental Health Regression Model:**
 
-```{r}
+```{r message=FALSE}
 cv_results_menthlth <- cv.glm(data = sampled_data_menthlth, glmfit = model_menthlth, K = 10)
 ```
 
@@ -172,7 +172,7 @@ cv_results_menthlth <- cv.glm(data = sampled_data_menthlth, glmfit = model_menth
 
 ### **3. Printing Cross-Validation Results:**
 
-```{r}
+```{r message=FALSE}
 print(cv_results_menthlth)
 cv_results_menthlth
 ```
@@ -181,7 +181,7 @@ cv_results_menthlth
 
 ### **1. Linear Regression Model for Physical Health (`PhysHlth`):**
 
-```{r}
+```{r message=FALSE}
 model_physhtlth <- lm(PhysHlth ~ ., data = sampled_data_physhtlth)
 ```
 
@@ -189,13 +189,13 @@ model_physhtlth <- lm(PhysHlth ~ ., data = sampled_data_physhtlth)
 
 ### **2. Cross-Validation for the Physical Health Regression Model:**
 
-```{r}
+```{r message=FALSE}
 cv_results_physhtlth <- cv.glm(data = sampled_data_physhtlth, glmfit = model_physhtlth, K = 10)
 ```
 
 **`cv.glm(data = sampled_data_physhtlth, glmfit = model_physhtlth, K = 10)`**: This line performs 10-fold cross-validation (**`K = 10`**) using the linear regression model (**`glmfit = model_physhtlth`**) on the data in the **`sampled_data_physhtlth`** dataframe. Cross-validation is a technique used to assess how well a statistical model generalizes to an independent dataset. It involves splitting the dataset into K subsets, training the model on K-1 of the folds, and testing it on the remaining fold. This process is repeated K times, with each fold used exactly once as the validation data.
 
-```{r}
+```{r message=FALSE}
 print(cv_results_physhtlth)
 cv_results_physhtlth
 ```
